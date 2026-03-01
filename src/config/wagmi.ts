@@ -24,4 +24,5 @@ export const config = getDefaultConfig({
     [tenderlyBase.id]: http(TENDERLY_RPC),
   },
   ssr: true,
+  pollingInterval: 12_000, // 12s — avoids Tenderly rate limiting (default is 4s)
 });

@@ -1,36 +1,89 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# EcoRound — Frontend
 
-## Getting Started
+Next.js 16 + React 19 + TailwindCSS 4 frontend for the EcoRound no-loss prediction platform. Valorant-themed dark UI with wallet integration via wagmi + RainbowKit.
 
-First, run the development server:
+## Pages
+
+| Route | Description |
+|---|---|
+| `/` | Hero landing page |
+| `/matches` | Browse all matches with status filters |
+| `/match/[id]` | Match detail — deposit USDC, view pool stats, claim rewards |
+| `/my-predictions` | Portfolio view of all user positions |
+| `/faucet` | Mint test USDC and ETH (Tenderly faucet) |
+
+## Tech Stack
+
+| Layer | Technology |
+|---|---|
+| Framework | Next.js 16 (App Router) |
+| UI | React 19, TailwindCSS 4 |
+| Wallet | wagmi v2, viem, RainbowKit |
+| Chain | Base (Tenderly virtual fork, Chain ID 84531) |
+
+## Setup
 
 ```bash
+cd frontend
+npm install
+
+# Configure environment
+cp .env.example .env.local
+# Edit .env.local:
+#   NEXT_PUBLIC_RPC_URL=https://virtual.rpc.tenderly.co/ecoround/...
+#   NEXT_PUBLIC_WC_PROJECT_ID=<WalletConnect project ID>
+#   NEXT_PUBLIC_API_URL=http://localhost:8080/api/v1
+
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+# Open http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Environment Variables
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+| Variable | Description |
+|---|---|
+| `NEXT_PUBLIC_RPC_URL` | Tenderly fork RPC URL (also used as faucet endpoint) |
+| `NEXT_PUBLIC_WC_PROJECT_ID` | WalletConnect project ID from [cloud.walletconnect.com](https://cloud.walletconnect.com) |
+| `NEXT_PUBLIC_API_URL` | api-simulator base URL |
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Key Hooks
 
-## Learn More
+| Hook | Description |
+|---|---|
+| `useMatches` | Fetch all matches from api-simulator |
+| `useMatch(id)` | Fetch single match with results |
+| `useVaultData(vaultAddr)` | Read on-chain vault stats (deposits, yield, status) |
+| `useUserPosition(vaultAddr)` | Read user's deposit amounts per team |
+| `useDeposit(vaultAddr)` | Approve USDC + call `deposit(team, amount)` |
+| `useClaim(vaultAddr)` | Call `claim()` to receive payout |
+| `useFaucet` | Mint 10,000 USDC via `tenderly_addErc20Balance` |
+| `useEthFaucet` | Mint 1 ETH via `tenderly_addBalance` |
 
-To learn more about Next.js, take a look at the following resources:
+## Wallet Configuration
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Wagmi is configured with a 12-second polling interval to avoid hitting Tenderly's rate limit when running alongside the admin panel:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```ts
+// src/config/wagmi.ts
+pollingInterval: 12_000
+```
 
-## Deploy on Vercel
+## Contract Addresses
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Defined in `src/config/contracts.ts`:
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+| Constant | Address |
+|---|---|
+| `FACTORY_ADDRESS` | `0x602473fc59ff5eefbe5d6c86d3af5c64ac7987bc` |
+| `USDC_ADDRESS` | `0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913` |
+
+## Adding MetaMask Network
+
+In MetaMask, add a custom network:
+
+| Field | Value |
+|---|---|
+| Network Name | EcoRound Base (Tenderly) |
+| RPC URL | `https://virtual.rpc.tenderly.co/ecoround/...` |
+| Chain ID | `84531` |
+| Currency Symbol | `ETH` |
