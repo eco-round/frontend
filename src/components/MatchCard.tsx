@@ -2,15 +2,27 @@
 
 import Link from "next/link";
 import StatusBadge from "./StatusBadge";
-import { formatDate } from "@/lib/utils";
+import { formatDate, getOnChainStatusLabel } from "@/lib/utils";
 import type { ApiMatch } from "@/config/api";
 
 interface MatchCardProps {
   match: ApiMatch;
+  onChainStatus?: number; // 0=Open, 1=Locked, 2=Resolved (undefined = not yet loaded)
 }
 
-export default function MatchCard({ match }: MatchCardProps) {
+export default function MatchCard({ match, onChainStatus }: MatchCardProps) {
   const getTeamInitial = (name: string) => name.charAt(0).toUpperCase();
+
+  // Use on-chain status as source of truth when available
+  const hasChainStatus = onChainStatus !== undefined;
+  const chainStatusLabel = hasChainStatus ? getOnChainStatusLabel(onChainStatus) : null;
+  const chainStatusColor = hasChainStatus
+    ? onChainStatus === 0
+      ? "text-emerald-400 bg-emerald-400/10 border-emerald-400/30"
+      : onChainStatus === 1
+      ? "text-amber-400 bg-amber-400/10 border-amber-400/30"
+      : "text-[#FF4655] bg-[#FF4655]/10 border-[#FF4655]/30"
+    : null;
 
   return (
     <Link href={`/match/${match.id}`}>
@@ -26,7 +38,24 @@ export default function MatchCard({ match }: MatchCardProps) {
           <p className="text-xs text-[#768079] uppercase tracking-widest font-bold">
             {match.event}
           </p>
-          <StatusBadge status={match.status} />
+          {/* On-chain badge (source of truth) or API fallback */}
+          {hasChainStatus && chainStatusLabel ? (
+            <span
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-black uppercase tracking-widest border ${chainStatusColor} relative`}
+              style={{ clipPath: "polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px))" }}
+            >
+              {onChainStatus === 0 && (
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#00E6C3] opacity-75" />
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-[#00E6C3]" />
+                </span>
+              )}
+              {chainStatusLabel}
+              <span className="text-[.65rem] opacity-60" title="On-chain status">⛓</span>
+            </span>
+          ) : (
+            <StatusBadge status={match.status} />
+          )}
         </div>
 
         {/* Teams */}

@@ -110,8 +110,24 @@ export default function MatchDetail({ match }: MatchDetailProps) {
 
           <div className="space-y-3">
             {match.results?.map((result, index) => {
-              const isTeamAWinner = result.winner === "TeamA";
-              const isTeamBWinner = result.winner === "TeamB";
+              // winner can be "TeamA"/"TeamB" (enum) OR the actual team name/tag from the data source
+              const isTeamAWinner =
+                result.winner === "TeamA" ||
+                result.winner === match.team_a_name ||
+                result.winner === match.team_a_tag;
+              const isTeamBWinner =
+                result.winner === "TeamB" ||
+                result.winner === match.team_b_name ||
+                result.winner === match.team_b_tag;
+
+              // Resolve display name from winner field
+              const winnerDisplay = isTeamAWinner
+                ? match.team_a_name
+                : isTeamBWinner
+                ? match.team_b_name
+                : result.winner && result.winner !== ""
+                ? result.winner
+                : "Draw";
 
               return (
                 <div
@@ -131,6 +147,11 @@ export default function MatchDetail({ match }: MatchDetailProps) {
                       <span className="text-[#768079] font-black uppercase tracking-wider text-xs bg-[#1A2634] px-3 py-1 clip-corner-sm">
                         Map {index + 1}
                       </span>
+                      {result.source && (
+                        <span className="text-[#768079]/50 text-xs uppercase tracking-wide">
+                          {result.source}
+                        </span>
+                      )}
                       <div className="flex items-center gap-3">
                         <span className={`font-black text-xl ${isTeamAWinner ? 'text-[#00E6C3]' : 'text-[#768079]'}`}>
                           {result.score_a}
@@ -143,7 +164,7 @@ export default function MatchDetail({ match }: MatchDetailProps) {
                     </div>
 
                     <div className="flex items-center gap-2">
-                      {result.winner !== "Draw" && (
+                      {result.winner && result.winner !== "" && (
                         <div className="text-xs text-[#768079] uppercase tracking-wider font-bold">
                           Winner:
                         </div>
@@ -160,17 +181,14 @@ export default function MatchDetail({ match }: MatchDetailProps) {
                           }
                         `}
                       >
-                        {result.winner === "TeamA"
-                          ? match.team_a_name
-                          : result.winner === "TeamB"
-                          ? match.team_b_name
-                          : "Draw"}
+                        {winnerDisplay}
                       </div>
                     </div>
                   </div>
                 </div>
               );
             })}
+
           </div>
         </div>
       )}

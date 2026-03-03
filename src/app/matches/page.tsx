@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useMatches } from "@/hooks/useMatches";
+import { useAllVaultStatuses } from "@/hooks/useAllVaultStatuses";
 import MatchCard from "@/components/MatchCard";
 
 type FilterTab = "all" | "open" | "locked" | "resolved";
@@ -10,10 +11,12 @@ export default function MatchesPage() {
   const [activeTab, setActiveTab] = useState<FilterTab>("all");
   const { matches, isLoading } = useMatches();
 
+  // Read on-chain vault status for every match in a single multicall
+  const { getEffectiveStatus, chainStatuses } = useAllVaultStatuses(matches ?? []);
+
   const filteredMatches = matches?.filter((match) => {
     if (activeTab === "all") return true;
-    if (activeTab === "resolved") return match.status === "finished";
-    return match.status === activeTab;
+    return getEffectiveStatus(match) === activeTab;
   });
 
   const tabs: { id: FilterTab; label: string }[] = [
@@ -26,9 +29,9 @@ export default function MatchesPage() {
   const getTabCount = (tabId: FilterTab) => {
     if (!matches) return 0;
     if (tabId === "all") return matches.length;
-    if (tabId === "resolved") return matches.filter(m => m.status === "finished").length;
-    return matches.filter(m => m.status === tabId).length;
+    return matches.filter((m) => getEffectiveStatus(m) === tabId).length;
   };
+
 
   return (
     <div className="min-h-screen bg-[#0F1923] text-[#ECE8E1] py-12 px-4">
@@ -178,7 +181,7 @@ export default function MatchesPage() {
                   opacity: 0
                 }}
               >
-                <MatchCard match={match} />
+                <MatchCard match={match} onChainStatus={chainStatuses[match.id]} />
               </div>
             ))}
           </div>
